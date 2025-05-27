@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/pages/Inicio/inicio_page.dart';
 import 'package:flutter_application_1/pages/Inicio/catalogo_cursos_page.dart';
 import 'package:flutter_application_1/pages/Inicio/auth_buttons_page.dart';
+import 'package:flutter_application_1/pages/Inicio/tienda_screen.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -17,6 +18,7 @@ class _LandingPageState extends State<LandingPage> {
     InicioPage(),
     CursosPage(),
     AuthButtonsPage(),
+    TiendaScreen(),
   ];
 
   @override
@@ -26,7 +28,10 @@ class _LandingPageState extends State<LandingPage> {
         title: const Text("Pluz Academy"),
         backgroundColor: const Color.fromARGB(255, 155, 198, 255),
       ),
-      body: paginas[_paginaActual],
+      body: SafeArea(
+        // ⬅️ Agregado para evitar que el mapa tape UI
+        child: paginas[_paginaActual],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _paginaActual,
         onTap: (index) {
@@ -34,10 +39,18 @@ class _LandingPageState extends State<LandingPage> {
             _paginaActual = index;
           });
         },
+        selectedItemColor: Colors.blueAccent, // ⬅️ Mejora visibilidad
+        unselectedItemColor: Colors.grey, // ⬅️ Mejora visibilidad
+        type: BottomNavigationBarType.fixed, // ⬅️ Asegura visibilidad
+        backgroundColor: Colors.white,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
           BottomNavigationBarItem(icon: Icon(Icons.school), label: 'Cursos'),
           BottomNavigationBarItem(icon: Icon(Icons.login), label: 'Ingresar'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.location_on),
+            label: 'Tienda',
+          ),
         ],
       ),
     );
