@@ -26,9 +26,32 @@ class _CursosPageState extends State<CursosPage> {
     });
   }
 
+  // Normaliza cadena quitando tildes y pasando a minúsculas
+  String _normalizar(String texto) {
+    const normal = {
+      'á': 'a',
+      'é': 'e',
+      'í': 'i',
+      'ó': 'o',
+      'ú': 'u',
+      'Á': 'a',
+      'É': 'e',
+      'Í': 'i',
+      'Ó': 'o',
+      'Ú': 'u',
+      'ñ': 'n',
+      'Ñ': 'n',
+    };
+    var salida = texto.toLowerCase();
+    normal.forEach((original, reemplazo) {
+      salida = salida.replaceAll(original, reemplazo);
+    });
+    return salida;
+  }
+
   void _filtrar(String texto) {
     setState(() {
-      _filtroTexto = texto.toLowerCase();
+      _filtroTexto = _normalizar(texto.trim());
     });
     _actualizarLista();
   }
@@ -44,10 +67,9 @@ class _CursosPageState extends State<CursosPage> {
     final lista = await _cursosOriginal;
     final filtrada =
         lista.where((curso) {
-          final nombre = curso['nombre'].toString().toLowerCase();
-          final descripcion = curso['descripcion'].toString().toLowerCase();
-          return nombre.contains(_filtroTexto) ||
-              descripcion.contains(_filtroTexto);
+          final nombre = curso['nombre']?.toString() ?? '';
+          final nombreNorm = _normalizar(nombre);
+          return nombreNorm.contains(_filtroTexto);
         }).toList();
 
     filtrada.sort((a, b) {
