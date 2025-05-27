@@ -1,3 +1,3 @@
-# flutter_application_1
+# Pluz Learning App
 
 A new Flutter project.
