@@ -17,8 +17,8 @@ class _LandingPageState extends State<LandingPage> {
   final List<Widget> paginas = const [
     InicioPage(),
     CursosPage(),
-    AuthButtonsPage(),
     TiendaScreen(),
+    AuthButtonsPage(),
   ];
 
   @override
@@ -46,11 +46,11 @@ class _LandingPageState extends State<LandingPage> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
           BottomNavigationBarItem(icon: Icon(Icons.school), label: 'Cursos'),
-          BottomNavigationBarItem(icon: Icon(Icons.login), label: 'Ingresar'),
           BottomNavigationBarItem(
             icon: Icon(Icons.location_on),
             label: 'Tienda',
           ),
+          BottomNavigationBarItem(icon: Icon(Icons.login), label: 'Ingresar'),
         ],
       ),
     );

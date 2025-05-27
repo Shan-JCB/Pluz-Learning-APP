@@ -2,7 +2,15 @@ import 'package:flutter/material.dart';
 
 class CursoCardWidget extends StatelessWidget {
   final Map<String, dynamic> curso;
-  const CursoCardWidget({super.key, required this.curso});
+  final void Function(Map<String, dynamic>)? onAgregar;
+  final List<Map<String, dynamic>>? carrito; // NUEVO
+
+  const CursoCardWidget({
+    super.key,
+    required this.curso,
+    this.onAgregar,
+    this.carrito,
+  });
 
   String _convertirDrive(String enlace) {
     final regExp = RegExp(r'/d/([a-zA-Z0-9_-]+)');
@@ -15,9 +23,15 @@ class CursoCardWidget extends StatelessWidget {
     }
   }
 
+  bool _yaEnCarrito() {
+    if (carrito == null) return false;
+    return carrito!.any((item) => item['id'] == curso['id']);
+  }
+
   @override
   Widget build(BuildContext context) {
     final img = _convertirDrive(curso['imagen'] ?? '');
+    final yaAgregado = _yaEnCarrito();
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 10),
@@ -70,6 +84,37 @@ class CursoCardWidget extends StatelessWidget {
                     Text('S/ ${curso['precio'].toString()}'),
                   ],
                 ),
+                const SizedBox(height: 10),
+                if (onAgregar != null)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child:
+                        yaAgregado
+                            ? ElevatedButton.icon(
+                              onPressed: null,
+                              icon: const Icon(Icons.check_circle),
+                              label: const Text('Agregado'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueGrey,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                            )
+                            : ElevatedButton.icon(
+                              onPressed: () => onAgregar!(curso),
+                              icon: const Icon(Icons.add_shopping_cart),
+                              label: const Text('Agregar'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                            ),
+                  ),
               ],
             ),
           ),

@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter_application_1/pages/curso/add_curso_page.dart';
-import 'package:flutter_application_1/pages/curso/edit_curso_page.dart';
-import 'package:flutter_application_1/pages/curso/home_cursos_page.dart';
 import 'package:flutter_application_1/pages/landing_page.dart';
 import 'firebase_options.dart';
 
 // Páginas fusionadas
 import 'pages/home_page.dart';
 
-import 'pages/proveedor/add_proveedor_page.dart';
-import 'pages/proveedor/edit_proveedor_page.dart';
-import 'pages/proveedor/home_proveedor_page.dart';
+//Rutas a Cursos
+import 'package:flutter_application_1/pages/curso/add_curso_page.dart';
+import 'package:flutter_application_1/pages/curso/edit_curso_page.dart';
+import 'package:flutter_application_1/pages/curso/home_cursos_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,11 +31,6 @@ class MyApp extends StatelessWidget {
       routes: {
         // Después de login, HomePage mostrará el CRUD
         '/home': (_) => const HomePage(),
-
-        // Rutas Proveedores
-        '/proveedores': (_) => const HomeProveedorPage(),
-        '/add_proveedor': (_) => const AddProveedorPage(),
-        '/edit_proveedor': (_) => const EditProveedorPage(),
 
         // Rutas Cursos
         '/cursos': (_) => const HomeCursoPage(),
