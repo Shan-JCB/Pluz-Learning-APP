@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/pages/auth/login_page.dart';
+import 'package:flutter_application_1/pages/auth/register_page.dart';
 import 'package:flutter_application_1/pages/utils/app_colors.dart';
 import 'package:flutter_application_1/pages/utils/app_images.dart';
-import 'auth/auth_page.dart';
 
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
@@ -27,9 +28,7 @@ class LandingPage extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const AuthPage(initLogin: false),
-                ),
+                MaterialPageRoute(builder: (_) => const RegisterPage()),
               );
             },
           ),
@@ -39,13 +38,12 @@ class LandingPage extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const AuthPage(initLogin: true),
-                ),
+                MaterialPageRoute(builder: (_) => const LoginPage()),
               );
             },
           ),
         ],
+
         iconTheme: const IconThemeData(
           color: Colors.white,
         ), // Para ícono de menú
