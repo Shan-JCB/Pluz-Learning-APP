@@ -12,4 +12,8 @@ class AppImages {
       'https://drive.google.com/uc?export=view&id=1XE-DHGJQ-u2ML5fNiBp3fsh15jtFIZ28';
   static const String urlLogoHome =
       'https://drive.google.com/uc?export=view&id=1PSDioM4Z3h_ZsvLHkRdIwtNO6tWBuB_R';
+  static const String urlnavbarhome =
+      'https://drive.google.com/uc?export=view&id=1OSxuMuICRmsRVT35XBZuAYHBes6nmxLy';
+  static const String urlnavbardeco =
+      'https://drive.google.com/uc?export=view&id=1zvzG4sT-eKnfsMImRkv0mMX5N1lsNp8O';
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/firebase_service.dart';
 import 'package:flutter_application_1/widgets/curso_card_widget.dart';
-import 'package:flutter_application_1/pages/carrito_screen.dart';
+import 'package:flutter_application_1/pages/apartados/carrito_screen.dart';
 
 class CursosPage extends StatefulWidget {
   const CursosPage({super.key});

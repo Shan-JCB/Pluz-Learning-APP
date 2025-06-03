@@ -1,71 +1,147 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application_1/pages/Inicio/tienda_screen.dart';
-import 'package:flutter_application_1/pages/auth/account_page.dart';
+import 'package:flutter_application_1/pages/utils/app_colors.dart';
+import 'package:flutter_application_1/pages/utils/app_images.dart';
 
 class NavbarWidget extends StatelessWidget {
-  const NavbarWidget({super.key});
+  final void Function(int) onSelectPage;
+  final int selectedIndex;
+
+  const NavbarWidget({
+    super.key,
+    required this.onSelectPage,
+    required this.selectedIndex,
+  });
 
   @override
   Widget build(BuildContext context) {
     final userEmail = FirebaseAuth.instance.currentUser?.email ?? 'Usuario';
 
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          UserAccountsDrawerHeader(
-            accountName: const Text('Mi Cuenta'),
-            accountEmail: Text(userEmail),
-            currentAccountPicture: const CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, size: 40),
+      // Envolvemos el ListView en un Container con BoxDecoration que usa imagen de fondo + capa semitransparente
+      child: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: NetworkImage(AppImages.urlFondo),
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(
+              AppColors.pluzBlancaCapaTrans1,
+              BlendMode.srcOver,
             ),
           ),
+        ),
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            // Header con imagen de fondo y capa semitransparente
+            UserAccountsDrawerHeader(
+              accountName: const Text('Mi Cuenta'),
+              accountEmail: Text(userEmail),
+              currentAccountPicture: const CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(
+                  Icons.person,
+                  size: 40,
+                  color: AppColors.pluzAzulIntenso,
+                ),
+              ),
+              // En lugar de solo color, usamos BoxDecoration con imagen + capa
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: NetworkImage(AppImages.urlnavbardeco),
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.mode(
+                    AppColors.pluzAzulCapatransparente,
+                    BlendMode.srcOver,
+                  ),
+                ),
+              ),
+            ),
 
-          // CRUD Cursos
-          ListTile(
-            leading: const Icon(Icons.school),
-            title: const Text('CRUD Cursos'),
-            onTap: () => Navigator.pushNamed(context, '/cursos'),
-          ),
+            // 0: Inicio / Catálogo de Cursos
+            ListTile(
+              leading: const Icon(Icons.home, color: AppColors.naranjaOscuro),
+              title: const Text(
+                'Inicio',
+                style: TextStyle(color: AppColors.naranjaOscuro),
+              ),
+              selected: selectedIndex == 0,
+              onTap: () => onSelectPage(0),
+            ),
 
-          // Cuenta
-          ListTile(
-            leading: const Icon(Icons.account_circle),
-            title: const Text('Cuenta'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AccountPage()),
-              );
-            },
-          ),
+            // 1: Tienda (mapa)
+            ListTile(
+              leading: const Icon(
+                Icons.location_on,
+                color: AppColors.pluzAzulIntenso,
+              ),
+              title: const Text(
+                'Ubicación a la tienda',
+                style: TextStyle(color: AppColors.pluzAzulOscuro),
+              ),
+              selected: selectedIndex == 1,
+              onTap: () => onSelectPage(1),
+            ),
 
-          // Ubicación a la tienda
-          ListTile(
-            leading: const Icon(Icons.location_on),
-            title: const Text('Ubicación a la tienda'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const TiendaScreen()),
-              );
-            },
-          ),
+            // 2: Carrito
+            ListTile(
+              leading: const Icon(
+                Icons.shopping_cart,
+                color: AppColors.pluzAzulIntenso,
+              ),
+              title: const Text(
+                'Mi Carrito',
+                style: TextStyle(color: AppColors.pluzAzulOscuro),
+              ),
+              selected: selectedIndex == 2,
+              onTap: () => onSelectPage(2),
+            ),
 
-          // Cerrar sesión
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('Cerrar sesión'),
-            onTap: () async {
-              await FirebaseAuth.instance.signOut();
-              Navigator.of(
-                context,
-              ).pushNamedAndRemoveUntil('/', (route) => false);
-            },
-          ),
-        ],
+            // 3: Cuenta
+            ListTile(
+              leading: const Icon(
+                Icons.account_circle,
+                color: AppColors.pluzAzulIntenso,
+              ),
+              title: const Text(
+                'Cuenta',
+                style: TextStyle(color: AppColors.pluzAzulOscuro),
+              ),
+              selected: selectedIndex == 3,
+              onTap: () => onSelectPage(3),
+            ),
+
+            const Divider(color: Color.fromARGB(179, 203, 203, 203)),
+
+            // 4: CRUD Cursos
+            ListTile(
+              leading: const Icon(Icons.edit, color: AppColors.pluzAzulIntenso),
+              title: const Text(
+                'CRUD Cursos',
+                style: TextStyle(color: AppColors.pluzAzulOscuro),
+              ),
+              selected: selectedIndex == 4,
+              onTap: () => onSelectPage(4),
+            ),
+
+            const Divider(color: Color.fromARGB(179, 203, 203, 203)),
+
+            // Cerrar sesión
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text(
+                'Cerrar sesión',
+                style: TextStyle(color: Colors.red),
+              ),
+              onTap: () async {
+                await FirebaseAuth.instance.signOut();
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil('/', (route) => false);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
