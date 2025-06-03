@@ -65,7 +65,7 @@ class _TiendaScreenState extends State<TiendaScreen> {
           polylines = {
             Polyline(
               polylineId: const PolylineId("ruta"),
-              color: Colors.blueAccent,
+              color: const Color.fromARGB(255, 255, 171, 68),
               width: 5,
               points: ruta,
             ),
@@ -121,7 +121,7 @@ class _TiendaScreenState extends State<TiendaScreen> {
                   GoogleMap(
                     initialCameraPosition: CameraPosition(
                       target: ubicacionUsuario!,
-                      zoom: 9,
+                      zoom: 8,
                     ),
                     markers: {
                       Marker(
@@ -135,7 +135,7 @@ class _TiendaScreenState extends State<TiendaScreen> {
                       Marker(
                         markerId: const MarkerId('tienda'),
                         position: ubicacionTienda!,
-                        infoWindow: const InfoWindow(title: 'FarmaVida S.A.C.'),
+                        infoWindow: const InfoWindow(title: 'Academia Pluz'),
                       ),
                     },
                     polylines: polylines,
