@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application_1/pages/utils/app_colors.dart';
 import 'package:flutter_application_1/pages/utils/app_images.dart';
 
-class NavbarWidget extends StatelessWidget {
+class NavbarWidget extends StatefulWidget {
   final void Function(int) onSelectPage;
   final int selectedIndex;
 
@@ -14,11 +16,49 @@ class NavbarWidget extends StatelessWidget {
   });
 
   @override
+  State<NavbarWidget> createState() => _NavbarWidgetState();
+}
+
+class _NavbarWidgetState extends State<NavbarWidget> {
+  String? imagenBase64;
+  String userEmail = 'Usuario';
+
+  @override
+  void initState() {
+    super.initState();
+    cargarDatosUsuario();
+  }
+
+  Future<void> cargarDatosUsuario() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc =
+        await FirebaseFirestore.instance
+            .collection('usuarios')
+            .doc(user.uid)
+            .get();
+
+    final data = doc.data();
+    if (mounted) {
+      setState(() {
+        userEmail = user.email ?? 'Usuario';
+        imagenBase64 = data?['fotoPerfilBase64'];
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final userEmail = FirebaseAuth.instance.currentUser?.email ?? 'Usuario';
+    ImageProvider? avatarImage;
+
+    if (imagenBase64 != null) {
+      try {
+        avatarImage = MemoryImage(base64Decode(imagenBase64!));
+      } catch (_) {}
+    }
 
     return Drawer(
-      // Envolvemos el ListView en un Container con BoxDecoration que usa imagen de fondo + capa semitransparente
       child: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
@@ -33,7 +73,6 @@ class NavbarWidget extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // Header con imagen de fondo y capa semitransparente
             UserAccountsDrawerHeader(
               accountName: const Text(
                 'Mi Cuenta',
@@ -51,13 +90,17 @@ class NavbarWidget extends StatelessWidget {
                   fontSize: 16,
                 ),
               ),
-              currentAccountPicture: const CircleAvatar(
+              currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
-                child: Icon(
-                  Icons.person,
-                  size: 40,
-                  color: AppColors.pluzAzulIntenso,
-                ),
+                backgroundImage: avatarImage,
+                child:
+                    avatarImage == null
+                        ? const Icon(
+                          Icons.person,
+                          size: 40,
+                          color: AppColors.pluzAzulIntenso,
+                        )
+                        : null,
               ),
               decoration: BoxDecoration(
                 image: DecorationImage(
@@ -71,18 +114,16 @@ class NavbarWidget extends StatelessWidget {
               ),
             ),
 
-            // 0: Inicio / Catálogo de Cursos
+            // Opciones del Drawer:
             ListTile(
               leading: const Icon(Icons.home, color: AppColors.naranjaOscuro),
               title: const Text(
                 'Inicio',
                 style: TextStyle(color: AppColors.naranjaOscuro),
               ),
-              selected: selectedIndex == 0,
-              onTap: () => onSelectPage(0),
+              selected: widget.selectedIndex == 0,
+              onTap: () => widget.onSelectPage(0),
             ),
-
-            // 1: Tienda (mapa)
             ListTile(
               leading: const Icon(
                 Icons.location_on,
@@ -92,11 +133,9 @@ class NavbarWidget extends StatelessWidget {
                 'Ubicación a la tienda',
                 style: TextStyle(color: AppColors.pluzAzulOscuro),
               ),
-              selected: selectedIndex == 1,
-              onTap: () => onSelectPage(1),
+              selected: widget.selectedIndex == 1,
+              onTap: () => widget.onSelectPage(1),
             ),
-
-            // 2: Carrito
             ListTile(
               leading: const Icon(
                 Icons.shopping_cart,
@@ -106,11 +145,9 @@ class NavbarWidget extends StatelessWidget {
                 'Mi Carrito',
                 style: TextStyle(color: AppColors.pluzAzulOscuro),
               ),
-              selected: selectedIndex == 2,
-              onTap: () => onSelectPage(2),
+              selected: widget.selectedIndex == 2,
+              onTap: () => widget.onSelectPage(2),
             ),
-
-            // 3: Cuenta
             ListTile(
               leading: const Icon(
                 Icons.account_circle,
@@ -120,26 +157,20 @@ class NavbarWidget extends StatelessWidget {
                 'Cuenta',
                 style: TextStyle(color: AppColors.pluzAzulOscuro),
               ),
-              selected: selectedIndex == 3,
-              onTap: () => onSelectPage(3),
+              selected: widget.selectedIndex == 3,
+              onTap: () => widget.onSelectPage(3),
             ),
-
             const Divider(color: Color.fromARGB(179, 203, 203, 203)),
-
-            // 4: CRUD Cursos
             ListTile(
               leading: const Icon(Icons.edit, color: AppColors.pluzAzulIntenso),
               title: const Text(
                 'CRUD Cursos',
                 style: TextStyle(color: AppColors.pluzAzulOscuro),
               ),
-              selected: selectedIndex == 4,
-              onTap: () => onSelectPage(4),
+              selected: widget.selectedIndex == 4,
+              onTap: () => widget.onSelectPage(4),
             ),
-
             const Divider(color: Color.fromARGB(179, 203, 203, 203)),
-
-            // Cerrar sesión
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text(
@@ -148,9 +179,11 @@ class NavbarWidget extends StatelessWidget {
               ),
               onTap: () async {
                 await FirebaseAuth.instance.signOut();
-                Navigator.of(
-                  context,
-                ).pushNamedAndRemoveUntil('/', (route) => false);
+                if (context.mounted) {
+                  Navigator.of(
+                    context,
+                  ).pushNamedAndRemoveUntil('/', (route) => false);
+                }
               },
             ),
           ],

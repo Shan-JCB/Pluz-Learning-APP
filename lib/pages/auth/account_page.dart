@@ -1,15 +1,92 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class AccountPage extends StatelessWidget {
+class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
 
-  // Cambiar correo
+  @override
+  State<AccountPage> createState() => _AccountPageState();
+}
 
-  // Cambiar correo sin verificación
+class _AccountPageState extends State<AccountPage> {
+  String? imagenBase64;
+  File? imagenSeleccionada;
+  final picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    obtenerFotoPerfil();
+  }
+
+  Future<void> obtenerFotoPerfil() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc =
+        await FirebaseFirestore.instance
+            .collection('usuarios')
+            .doc(user.uid)
+            .get();
+
+    final data = doc.data();
+    if (data != null && data['fotoPerfilBase64'] != null) {
+      setState(() {
+        imagenBase64 = data['fotoPerfilBase64'];
+      });
+    }
+  }
+
+  Future<void> seleccionarImagen(ImageSource source) async {
+    final picked = await picker.pickImage(source: source, imageQuality: 50);
+    if (picked == null) return;
+
+    setState(() {
+      imagenSeleccionada = File(picked.path);
+    });
+  }
+
+  Future<void> subirImagen() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || imagenSeleccionada == null) return;
+
+    final bytes = await imagenSeleccionada!.readAsBytes();
+    final base64Image = base64Encode(bytes);
+
+    final docRef = FirebaseFirestore.instance
+        .collection('usuarios')
+        .doc(user.uid);
+    final docSnapshot = await docRef.get();
+
+    if (docSnapshot.exists) {
+      await docRef.update({
+        'fotoPerfilBase64': base64Image,
+        'correo': user.email ?? '',
+      });
+    } else {
+      await docRef.set({
+        'fotoPerfilBase64': base64Image,
+        'correo': user.email ?? '',
+      });
+    }
+
+    if (!mounted) return;
+    setState(() {
+      imagenBase64 = base64Image;
+      imagenSeleccionada = null;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Imagen de perfil actualizada')),
+    );
+  }
+
   Future<void> _changeEmail(BuildContext context) async {
     final controller = TextEditingController();
-
     final newEmail = await showDialog<String>(
       context: context,
       builder:
@@ -34,9 +111,7 @@ class AccountPage extends StatelessWidget {
 
     if (newEmail != null && newEmail.isNotEmpty) {
       try {
-        // Aquí no usamos verifyBeforeUpdateEmail, solo actualizamos el correo
         await FirebaseAuth.instance.currentUser?.updateEmail(newEmail);
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Correo actualizado exitosamente')),
         );
@@ -48,10 +123,8 @@ class AccountPage extends StatelessWidget {
     }
   }
 
-  // Cambiar contraseña
   Future<void> _changePassword(BuildContext context) async {
     final controller = TextEditingController();
-
     final newPassword = await showDialog<String>(
       context: context,
       builder:
@@ -89,7 +162,6 @@ class AccountPage extends StatelessWidget {
     }
   }
 
-  // Eliminar cuenta
   Future<void> _deleteAccount(BuildContext context) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -133,12 +205,59 @@ class AccountPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final email = FirebaseAuth.instance.currentUser?.email ?? '';
+    ImageProvider<Object>? imageWidget;
+
+    if (imagenSeleccionada != null) {
+      imageWidget = FileImage(imagenSeleccionada!);
+    } else if (imagenBase64 != null) {
+      try {
+        final bytes = base64Decode(imagenBase64!);
+        imageWidget = MemoryImage(bytes);
+      } catch (_) {}
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Gestión de Cuenta')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Center(
+            child: CircleAvatar(
+              radius: 60,
+              backgroundImage: imageWidget,
+              child:
+                  imageWidget == null
+                      ? const Icon(Icons.person, size: 60)
+                      : null,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: Column(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () => seleccionarImagen(ImageSource.gallery),
+                  icon: const Icon(Icons.image),
+                  label: const Text("Desde galería"),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => seleccionarImagen(ImageSource.camera),
+                  icon: const Icon(Icons.camera_alt),
+                  label: const Text("Desde cámara"),
+                ),
+                if (imagenSeleccionada != null)
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                    ),
+                    onPressed: subirImagen,
+                    icon: const Icon(Icons.check),
+                    label: const Text("Guardar imagen"),
+                  ),
+              ],
+            ),
+          ),
+          const Divider(height: 40),
           ListTile(
             leading: const Icon(Icons.email),
             title: const Text('Editar correo electrónico'),
