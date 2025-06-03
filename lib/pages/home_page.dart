@@ -68,8 +68,8 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-        title: Image.network(
-          AppImages.urlLogoHome,
+        title: Image.asset(
+          AppImages.logoblanco,
           height: 40,
           errorBuilder: (context, error, stackTrace) {
             return const Icon(Icons.school, color: Colors.white, size: 32);

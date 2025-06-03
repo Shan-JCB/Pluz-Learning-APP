@@ -22,7 +22,7 @@ class NavbarWidget extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: NetworkImage(AppImages.urlFondo),
+            image: AssetImage(AppImages.fondo3),
             fit: BoxFit.cover,
             colorFilter: ColorFilter.mode(
               AppColors.pluzBlancaCapaTrans1,
@@ -35,8 +35,22 @@ class NavbarWidget extends StatelessWidget {
           children: [
             // Header con imagen de fondo y capa semitransparente
             UserAccountsDrawerHeader(
-              accountName: const Text('Mi Cuenta'),
-              accountEmail: Text(userEmail),
+              accountName: const Text(
+                'Mi Cuenta',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              accountEmail: Text(
+                userEmail,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
               currentAccountPicture: const CircleAvatar(
                 backgroundColor: Colors.white,
                 child: Icon(
@@ -45,10 +59,9 @@ class NavbarWidget extends StatelessWidget {
                   color: AppColors.pluzAzulIntenso,
                 ),
               ),
-              // En lugar de solo color, usamos BoxDecoration con imagen + capa
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: NetworkImage(AppImages.urlnavbardeco),
+                  image: AssetImage(AppImages.cabecera1),
                   fit: BoxFit.cover,
                   colorFilter: ColorFilter.mode(
                     AppColors.pluzAzulCapatransparente,

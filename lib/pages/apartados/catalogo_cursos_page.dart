@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/firebase_service.dart';
+import 'package:flutter_application_1/pages/utils/app_colors.dart';
 import 'package:flutter_application_1/widgets/curso_card_widget.dart';
 import 'package:flutter_application_1/pages/apartados/carrito_screen.dart';
 
@@ -56,16 +57,6 @@ class _CursosPageState extends State<CursosPage>
     _iconAnimationController.forward().then((_) {
       _iconAnimationController.reverse();
     });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${producto['nombre']} añadido al carrito'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 1),
-        margin: const EdgeInsets.only(bottom: 100, left: 16, right: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
   }
 
   void irAlCarrito() async {
@@ -73,7 +64,7 @@ class _CursosPageState extends State<CursosPage>
       context,
       MaterialPageRoute(builder: (context) => CarritoScreen(carrito: carrito)),
     );
-    setState(() {}); // refrescar cantidad
+    setState(() {}); // refrescar cantidad al volver
   }
 
   String _normalizar(String texto) {
@@ -135,48 +126,7 @@ class _CursosPageState extends State<CursosPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Catálogo de Cursos'),
-        backgroundColor: Colors.blueAccent,
-        actions: [
-          Stack(
-            children: [
-              IconButton(
-                icon: ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: const Icon(Icons.shopping_cart),
-                ),
-                onPressed: irAlCarrito,
-              ),
-              if (carrito.isNotEmpty)
-                Positioned(
-                  right: 6,
-                  top: 6,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 20,
-                      minHeight: 20,
-                    ),
-                    child: Text(
-                      '${carrito.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
+      // Ya no hay AppBar
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -200,7 +150,7 @@ class _CursosPageState extends State<CursosPage>
                     _ordenAscendente
                         ? Icons.arrow_upward
                         : Icons.arrow_downward,
-                    color: Colors.green,
+                    color: AppColors.pluzAzulIntenso,
                   ),
                   onPressed: _ordenarPorPrecio,
                 ),
@@ -225,6 +175,49 @@ class _CursosPageState extends State<CursosPage>
           ],
         ),
       ),
+      // Carrito como FloatingActionButton con conteo
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 16.0),
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              FloatingActionButton(
+                backgroundColor: AppColors.naranjaOscuro,
+                onPressed: irAlCarrito,
+                child: const Icon(Icons.shopping_cart, color: Colors.white),
+              ),
+              if (carrito.isNotEmpty)
+                Positioned(
+                  right: -4,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 20,
+                      minHeight: 20,
+                    ),
+                    child: Text(
+                      '${carrito.length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }

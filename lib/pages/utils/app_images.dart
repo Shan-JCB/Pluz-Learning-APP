@@ -16,4 +16,10 @@ class AppImages {
       'https://drive.google.com/uc?export=view&id=1OSxuMuICRmsRVT35XBZuAYHBes6nmxLy';
   static const String urlnavbardeco =
       'https://drive.google.com/uc?export=view&id=1zvzG4sT-eKnfsMImRkv0mMX5N1lsNp8O';
+
+  // Rutas a assets locales
+  static const String fondo3 = 'assets/images/fondo3.jpg';
+  static const String cabecera1 = 'assets/images/cabecera1.jpg';
+  static const String logoazul = 'assets/images/logo.png';
+  static const String logoblanco = 'assets/images/logowhite.png';
 }

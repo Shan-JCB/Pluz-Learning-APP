@@ -129,8 +129,8 @@ class _AuthPageState extends State<AuthPage> {
                     // Logo centrado en la parte superior
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        AppImages.urlLogoHome,
+                      child: Image.asset(
+                        AppImages.logoblanco,
                         height: 100,
                         errorBuilder: (context, error, stackTrace) {
                           return const Icon(
