@@ -22,4 +22,5 @@ class AppImages {
   static const String cabecera1 = 'assets/images/cabecera1.jpg';
   static const String logoazul = 'assets/images/logo.png';
   static const String logoblanco = 'assets/images/logowhite.png';
+  static const String ubicacion = 'assets/images/ubicacion.jpg';
 }

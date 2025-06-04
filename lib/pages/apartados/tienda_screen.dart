@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/pages/utils/app_colors.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_application_1/core/firebase_service.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_application_1/pages/utils/app_images.dart';
 
 class TiendaScreen extends StatefulWidget {
   const TiendaScreen({super.key});
@@ -102,10 +104,7 @@ class _TiendaScreenState extends State<TiendaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("¿Dónde nos ubicamos?"),
-        backgroundColor: const Color.fromARGB(255, 198, 238, 244),
-      ),
+      // Sin AppBar
       body:
           cargando
               ? const Center(child: CircularProgressIndicator())
@@ -116,42 +115,96 @@ class _TiendaScreenState extends State<TiendaScreen> {
                   style: TextStyle(fontSize: 16),
                 ),
               )
-              : Stack(
+              : Column(
                 children: [
-                  GoogleMap(
-                    initialCameraPosition: CameraPosition(
-                      target: ubicacionUsuario!,
-                      zoom: 8,
-                    ),
-                    markers: {
-                      Marker(
-                        markerId: const MarkerId('usuario'),
-                        position: ubicacionUsuario!,
-                        infoWindow: const InfoWindow(title: 'Tu ubicación'),
-                        icon: BitmapDescriptor.defaultMarkerWithHue(
-                          BitmapDescriptor.hueAzure,
+                  // Contenedor para el mapa
+                  Container(
+                    height: MediaQuery.of(context).size.height * 0.5,
+                    color: AppColors.pluzCelesteMedio,
+                    child: GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: ubicacionUsuario!,
+                        zoom: 8, // zoom más cercano
+                      ),
+                      markers: {
+                        Marker(
+                          markerId: const MarkerId('usuario'),
+                          position: ubicacionUsuario!,
+                          infoWindow: const InfoWindow(title: 'Tu ubicación'),
+                          icon: BitmapDescriptor.defaultMarkerWithHue(
+                            BitmapDescriptor.hueAzure,
+                          ),
                         ),
-                      ),
-                      Marker(
-                        markerId: const MarkerId('tienda'),
-                        position: ubicacionTienda!,
-                        infoWindow: const InfoWindow(title: 'Academia Pluz'),
-                      ),
-                    },
-                    polylines: polylines,
-                    onMapCreated: (controller) => mapController = controller,
+                        Marker(
+                          markerId: const MarkerId('tienda'),
+                          position: ubicacionTienda!,
+                          infoWindow: const InfoWindow(title: 'Academia Pluz'),
+                        ),
+                      },
+                      polylines: polylines,
+                      onMapCreated: (controller) {
+                        mapController = controller;
+                      },
+                    ),
                   ),
-                  Positioned(
-                    bottom: 20,
-                    right: 20,
-                    child: FloatingActionButton(
-                      backgroundColor: Colors.orangeAccent,
-                      onPressed: verificarYcargarDatos,
-                      child: const Icon(Icons.refresh),
+
+                  // Imagen y descripción debajo del mapa
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 8,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.asset(
+                                AppImages.ubicacion,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.pluzAzulIntenso,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              'Nuestra ubicación principal se encuentra en 051, Av. San Martín 158, Huanta 05121. '
+                              'Ven a visitarnos para conocer nuestras instalaciones y tomar '
+                              'uno de nuestros cursos presenciales. ¡Te esperamos!',
+                              textAlign: TextAlign.justify,
+                              style: TextStyle(
+                                fontSize: 16,
+                                height: 1.5,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
+      // Botón flotante para recargar
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.naranjaIntenso,
+        onPressed: verificarYcargarDatos,
+        child: const Icon(Icons.refresh, color: Colors.white),
+      ),
     );
   }
 }

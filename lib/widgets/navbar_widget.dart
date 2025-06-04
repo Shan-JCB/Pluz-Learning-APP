@@ -21,7 +21,7 @@ class NavbarWidget extends StatefulWidget {
 
 class _NavbarWidgetState extends State<NavbarWidget> {
   String? imagenBase64;
-  String userEmail = 'Usuario';
+  String nombreUsuario = 'Usuario';
 
   @override
   void initState() {
@@ -42,7 +42,7 @@ class _NavbarWidgetState extends State<NavbarWidget> {
     final data = doc.data();
     if (mounted) {
       setState(() {
-        userEmail = user.email ?? 'Usuario';
+        nombreUsuario = data?['nombres'] ?? 'Usuario';
         imagenBase64 = data?['fotoPerfilBase64'];
       });
     }
@@ -74,22 +74,15 @@ class _NavbarWidgetState extends State<NavbarWidget> {
           padding: EdgeInsets.zero,
           children: [
             UserAccountsDrawerHeader(
-              accountName: const Text(
-                'Mi Cuenta',
-                style: TextStyle(
+              accountName: Text(
+                'Hola, $nombreUsuario!',
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                 ),
               ),
-              accountEmail: Text(
-                userEmail,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
+              accountEmail: const SizedBox.shrink(),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
                 backgroundImage: avatarImage,
@@ -113,6 +106,7 @@ class _NavbarWidgetState extends State<NavbarWidget> {
                 ),
               ),
             ),
+            // (continúan los ListTile sin cambios...)
 
             // Opciones del Drawer:
             ListTile(

@@ -17,6 +17,7 @@ class AppColors {
   );
 
   static const Color pluzAzulCapaTrans2 = Color.fromARGB(234, 21, 101, 166);
+  static const Color pluzAzulCapaTrans4 = Color.fromARGB(199, 50, 140, 189);
   static const Color pluzAzulCapaTrans3 = Color.fromARGB(234, 103, 182, 227);
   static const Color pluzBlancaCapaTrans1 = Color.fromARGB(234, 255, 255, 255);
 
