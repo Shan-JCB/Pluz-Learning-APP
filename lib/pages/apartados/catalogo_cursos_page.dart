@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/firebase_service.dart';
 import 'package:flutter_application_1/pages/utils/app_colors.dart';
@@ -13,7 +15,7 @@ class CursosPage extends StatefulWidget {
 
 class _CursosPageState extends State<CursosPage>
     with SingleTickerProviderStateMixin {
-  late Future<List> _cursosOriginal;
+  late Future<List<Map<String, dynamic>>> _cursosOriginal;
   List _cursosFiltrados = [];
   List<Map<String, dynamic>> carrito = [];
 
@@ -23,10 +25,29 @@ class _CursosPageState extends State<CursosPage>
   late AnimationController _iconAnimationController;
   late Animation<double> _scaleAnimation;
 
+  Future<List<Map<String, dynamic>>> getCursosFiltrandoComprados() async {
+    final todos = await getCursos();
+    final user = FirebaseAuth.instance.currentUser;
+
+    final comprasSnap =
+        await FirebaseFirestore.instance
+            .collection('usuarios')
+            .doc(user!.uid)
+            .collection('compras')
+            .get();
+
+    final compradosIds = comprasSnap.docs.map((e) => e.id).toSet();
+
+    return todos
+        .where((curso) => !compradosIds.contains(curso['id']))
+        .cast<Map<String, dynamic>>()
+        .toList();
+  }
+
   @override
   void initState() {
     super.initState();
-    _cursosOriginal = getCursos();
+    _cursosOriginal = getCursosFiltrandoComprados();
     _cursosOriginal.then((data) {
       setState(() {
         _cursosFiltrados = data;

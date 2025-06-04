@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CursoCardWidget extends StatelessWidget {
   final Map<String, dynamic> curso;
   final void Function(Map<String, dynamic>)? onAgregar;
-  final List<Map<String, dynamic>>? carrito; // NUEVO
+  final List<Map<String, dynamic>>? carrito;
+  final bool esComprado;
+  final VoidCallback? onCancel; // NUEVO
 
   const CursoCardWidget({
     super.key,
     required this.curso,
     this.onAgregar,
     this.carrito,
+    this.esComprado = false,
+    this.onCancel, // NUEVO
   });
 
   String _convertirDrive(String enlace) {
@@ -81,40 +87,75 @@ class CursoCardWidget extends StatelessWidget {
                     const SizedBox(width: 20),
                     const Icon(Icons.lock_open, size: 18),
                     const SizedBox(width: 5),
-                    Text('S/ ${curso['precio'].toString()}'),
+                    esComprado
+                        ? const Text('Acceso completo')
+                        : Text('S/ ${curso['precio'].toString()}'),
                   ],
                 ),
                 const SizedBox(height: 10),
-                if (onAgregar != null)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child:
-                        yaAgregado
-                            ? ElevatedButton.icon(
-                              onPressed: null,
-                              icon: const Icon(Icons.check_circle),
-                              label: const Text('Agregado'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blueGrey,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                              ),
-                            )
-                            : ElevatedButton.icon(
-                              onPressed: () => onAgregar!(curso),
-                              icon: const Icon(Icons.add_shopping_cart),
-                              label: const Text('Agregar'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.orange,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child:
+                      esComprado
+                          ? ElevatedButton.icon(
+                            icon: const Icon(Icons.cancel),
+                            label: const Text('Cancelar suscripción'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
                               ),
                             ),
-                  ),
+                            onPressed: () async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
+
+  await FirebaseFirestore.instance
+      .collection('usuarios')
+      .doc(user.uid)
+      .collection('compras')
+      .doc(curso['id'])
+      .delete();
+
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Suscripción cancelada')),
+    );
+  }
+
+  if (onCancel != null) onCancel!(); // Notifica a la vista
+},
+
+                          )
+                          : onAgregar != null
+                          ? yaAgregado
+                              ? ElevatedButton.icon(
+                                onPressed: null,
+                                icon: const Icon(Icons.check_circle),
+                                label: const Text('Agregado'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blueGrey,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                              )
+                              : ElevatedButton.icon(
+                                onPressed: () => onAgregar!(curso),
+                                icon: const Icon(Icons.add_shopping_cart),
+                                label: const Text('Agregar'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                              )
+                          : const SizedBox.shrink(),
+                ),
               ],
             ),
           ),

@@ -120,11 +120,23 @@ class _NavbarWidgetState extends State<NavbarWidget> {
             ),
             ListTile(
               leading: const Icon(
+                Icons.book_rounded,
+                color: AppColors.pluzAzulIntenso,
+              ),
+              title: const Text(
+                'Mis Cursos',
+                style: TextStyle(color: AppColors.pluzAzulOscuro),
+              ),
+              selected: widget.selectedIndex == 5,
+              onTap: () => widget.onSelectPage(5),
+            ),
+            ListTile(
+              leading: const Icon(
                 Icons.location_on,
                 color: AppColors.pluzAzulIntenso,
               ),
               title: const Text(
-                'Ubicación a la tienda',
+                'Academia',
                 style: TextStyle(color: AppColors.pluzAzulOscuro),
               ),
               selected: widget.selectedIndex == 1,
@@ -136,7 +148,7 @@ class _NavbarWidgetState extends State<NavbarWidget> {
                 color: AppColors.pluzAzulIntenso,
               ),
               title: const Text(
-                'Mi Carrito',
+                'Historial de Compras',
                 style: TextStyle(color: AppColors.pluzAzulOscuro),
               ),
               selected: widget.selectedIndex == 2,

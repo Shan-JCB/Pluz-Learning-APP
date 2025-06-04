@@ -32,6 +32,7 @@ class _CarritoScreenState extends State<CarritoScreen> {
 
     final firestore = FirebaseFirestore.instance;
 
+    // Guardar en historial
     await firestore
         .collection('usuarios')
         .doc(user.uid)
@@ -41,6 +42,16 @@ class _CarritoScreenState extends State<CarritoScreen> {
           'productos': widget.carrito,
           'total': total,
         });
+
+    // Guardar en compras
+    for (final curso in widget.carrito) {
+      await firestore
+          .collection('usuarios')
+          .doc(user.uid)
+          .collection('compras')
+          .doc(curso['id']) // Asegúrate de que cada curso tenga un campo 'id'
+          .set(curso);
+    }
 
     setState(() {
       widget.carrito.clear();
