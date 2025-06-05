@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application_1/pages/utils/app_colors.dart';
 import 'historial_carrito.dart';
 
 class CarritoScreen extends StatefulWidget {
@@ -20,7 +21,6 @@ class _CarritoScreenState extends State<CarritoScreen> {
     setState(() {
       widget.carrito.removeAt(index);
     });
-
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Producto eliminado del carrito')),
     );
@@ -49,7 +49,7 @@ class _CarritoScreenState extends State<CarritoScreen> {
           .collection('usuarios')
           .doc(user.uid)
           .collection('compras')
-          .doc(curso['id']) // Asegúrate de que cada curso tenga un campo 'id'
+          .doc(curso['id'])
           .set(curso);
     }
 
@@ -76,7 +76,18 @@ class _CarritoScreenState extends State<CarritoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mi Carrito'),
+        // 1. Asegúrate de no desactivar la flecha de regresar:
+        automaticallyImplyLeading: true,
+
+        // 2. Fondo del AppBar (puede quedar igual que antes)
+        backgroundColor: AppColors.pluzAzulIntenso,
+
+        // 3. Forzar que todos los iconos (flecha, acciones) sean blancos:
+        iconTheme: const IconThemeData(color: Colors.white),
+
+        // 4. Título en color blanco:
+        title: const Text('Mi Carrito', style: TextStyle(color: Colors.white)),
+
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
@@ -90,32 +101,91 @@ class _CarritoScreenState extends State<CarritoScreen> {
           ),
           if (widget.carrito.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.check),
+              icon: const Icon(Icons.check_circle),
               onPressed: finalizarCompra,
               tooltip: 'Finalizar compra',
             ),
         ],
       ),
+
       body:
           widget.carrito.isEmpty
-              ? const Center(child: Text('Tu carrito está vacío'))
+              ? const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.shopping_cart_outlined,
+                      size: 80,
+                      color: AppColors.pluzAzulCapaTrans2,
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      'Tu carrito está vacío',
+                      style: TextStyle(fontSize: 18, color: Colors.black54),
+                    ),
+                  ],
+                ),
+              )
               : Column(
                 children: [
                   Expanded(
                     child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                       itemCount: widget.carrito.length,
                       itemBuilder: (context, index) {
                         final producto = widget.carrito[index];
-                        return Card(
+                        return Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
                           child: ListTile(
-                            leading: Image.network(
-                              _convertirDrive(producto['imagen'] ?? ''),
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
+                            contentPadding: const EdgeInsets.all(12),
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                _convertirDrive(producto['imagen'] ?? ''),
+                                width: 60,
+                                height: 60,
+                                fit: BoxFit.cover,
+                                errorBuilder:
+                                    (_, __, ___) => Container(
+                                      width: 60,
+                                      height: 60,
+                                      color: Colors.grey[200],
+                                      child: const Icon(
+                                        Icons.broken_image,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                              ),
                             ),
-                            title: Text(producto['nombre']),
-                            subtitle: Text('S/ ${producto['precio']}'),
+                            title: Text(
+                              producto['nombre'],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.pluzAzulOscuro,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'S/ ${producto['precio'].toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                            ),
                             trailing: IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () => eliminarDelCarrito(index),
@@ -125,14 +195,73 @@ class _CarritoScreenState extends State<CarritoScreen> {
                       },
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'Total: S/ ${total.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.pluzAzulCapaTrans4,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 6,
+                          offset: Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          'Resumen de tu compra',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.pluzBlanco,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Total de artículos: ${widget.carrito.length}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.pluzBlanco,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Total a pagar: S/ ${total.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.pluzBlanco,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed:
+                              widget.carrito.isNotEmpty
+                                  ? finalizarCompra
+                                  : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.naranjaIntenso,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'PAGAR AHORA',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

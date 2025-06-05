@@ -25,12 +25,26 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  bool _esEmailValido(String email) {
+    final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return regex.hasMatch(email);
+  }
+
   Future<void> handleLogin() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
+    // Validaciones básicas
     if (email.isEmpty || password.isEmpty) {
-      showMessage('Completa todos los campos');
+      showMessage('Por favor completa todos los campos.');
+      return;
+    }
+    if (!_esEmailValido(email)) {
+      showMessage('Ingresa un correo válido.');
+      return;
+    }
+    if (password.length < 6) {
+      showMessage('La contraseña debe tener al menos 6 caracteres.');
       return;
     }
 
@@ -44,16 +58,27 @@ class _LoginPageState extends State<LoginPage> {
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
         case 'user-not-found':
-          showMessage('No existe una cuenta con ese correo');
+        case 'invalid-credential':
+          // el código 'invalid-credential' también ocurre cuando no existe el correo
+          showMessage('No se encontró ninguna cuenta con ese correo.');
           break;
         case 'wrong-password':
-          showMessage('Contraseña incorrecta');
+          showMessage('La contraseña ingresada es incorrecta.');
+          break;
+        case 'invalid-email':
+          showMessage('Formato de correo no válido.');
+          break;
+        case 'user-disabled':
+          showMessage('La cuenta ha sido deshabilitada. Contacta soporte.');
+          break;
+        case 'too-many-requests':
+          showMessage('Has intentado demasiadas veces. Intenta más tarde.');
           break;
         default:
           showMessage('Error: ${e.message}');
       }
     } catch (e) {
-      showMessage('Error inesperado');
+      showMessage('Ocurrió un error inesperado. Intenta de nuevo.');
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
@@ -110,6 +135,7 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(height: 16),
                           TextField(
                             controller: emailController,
+                            keyboardType: TextInputType.emailAddress,
                             style: const TextStyle(color: Colors.white),
                             decoration: const InputDecoration(
                               labelText: 'Correo electrónico',

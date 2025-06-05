@@ -26,6 +26,7 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
   final paisController = TextEditingController();
   String genero = 'Otro';
   bool mostrarFormulario = false;
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -36,6 +37,9 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
   }
 
   Future<void> registrarUsuario({bool omitido = false}) async {
+    if (isLoading) return;
+    setState(() => isLoading = true);
+
     try {
       final credential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
@@ -43,52 +47,57 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
             password: widget.password,
           );
 
-      await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(credential.user!.uid)
-          .set({
-            'nombres': widget.nombre,
-            'correo': widget.correo,
-            'edad': omitido ? null : edadController.text.trim(),
-            'telefono': omitido ? null : telefonoController.text.trim(),
-            'pais': omitido ? null : paisController.text.trim(),
-            'genero': omitido ? null : genero,
-            'fotoPerfilBase64': null,
-          });
+      final uid = credential.user!.uid;
+      final docRef = FirebaseFirestore.instance.collection('usuarios').doc(uid);
+
+      // Preparamos datos
+      final data = {
+        'nombres': widget.nombre,
+        'correo': widget.correo,
+        'edad': omitido ? null : edadController.text.trim(),
+        'telefono': omitido ? null : telefonoController.text.trim(),
+        'pais': omitido ? null : paisController.text.trim(),
+        'genero': omitido ? null : genero,
+        'fotoPerfilBase64': null,
+      };
+
+      // Guardamos todo en un solo set
+      await docRef.set(data);
 
       if (!mounted) return;
 
       if (omitido) {
-        await showDialog(
-          context: context,
-          builder:
-              (_) => AlertDialog(
-                title: const Text('Registro completado'),
-                content: const Text(
-                  'Podrás modificar y agregar tus datos en la opción "cuenta" en la barra izquierda.',
-                ),
-                actions: [
-                  TextButton(
-                    child: const Text('Aceptar'),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '/home',
-                        (_) => false,
-                      );
-                    },
-                  ),
-                ],
-              ),
+        // Si omite, mostramos SnackBar y navegamos inmediatamente
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Registro completado. Puedes agregar datos más tarde desde "Cuenta".',
+            ),
+            duration: Duration(seconds: 2),
+          ),
         );
+        // Navegamos tras breve delay para que se vea el SnackBar
+        Future.delayed(const Duration(milliseconds: 500), () {
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
+        });
       } else {
+        // Registro completo con datos adicionales
         Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
       }
     } on FirebaseAuthException catch (e) {
+      String mensaje = 'Error: ${e.message}';
+      if (e.code == 'email-already-in-use') {
+        mensaje = 'El correo ya está registrado.';
+      } else if (e.code == 'invalid-email') {
+        mensaje = 'Correo inválido.';
+      } else if (e.code == 'weak-password') {
+        mensaje = 'La contraseña es demasiado débil.';
+      }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: ${e.message}')));
+      ).showSnackBar(SnackBar(content: Text(mensaje)));
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -139,7 +148,7 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
                             ),
                             const SizedBox(height: 10),
                             const Text(
-                              'Casi listo!',
+                              '¡Casi listo!',
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.w600,
@@ -147,7 +156,6 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
                               ),
                             ),
                             const SizedBox(height: 16),
-
                             TextField(
                               controller: edadController,
                               keyboardType: TextInputType.number,
@@ -170,7 +178,6 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
                               ),
                             ),
                             const SizedBox(height: 12),
-
                             DropdownButtonFormField<String>(
                               value: genero,
                               dropdownColor: AppColors.pluzAzulIntenso,
@@ -206,7 +213,6 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
                                       setState(() => genero = val ?? 'Otro'),
                             ),
                             const SizedBox(height: 12),
-
                             TextField(
                               controller: paisController,
                               style: const TextStyle(color: Colors.white),
@@ -228,7 +234,6 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
                               ),
                             ),
                             const SizedBox(height: 12),
-
                             TextField(
                               controller: telefonoController,
                               keyboardType: TextInputType.phone,
@@ -251,44 +256,57 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
                               ),
                             ),
                             const SizedBox(height: 20),
-
-                            ElevatedButton.icon(
-                              onPressed: () => registrarUsuario(),
-                              icon: const Icon(Icons.check),
-                              label: const Text('Finalizar registro'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.naranjaIntenso,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 32,
-                                  vertical: 14,
+                            isLoading
+                                ? const CircularProgressIndicator(
+                                  color: AppColors.naranjaIntenso,
+                                )
+                                : Column(
+                                  children: [
+                                    ElevatedButton.icon(
+                                      onPressed: () => registrarUsuario(),
+                                      icon: const Icon(Icons.check),
+                                      label: const Text('Finalizar registro'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            AppColors.naranjaIntenso,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 32,
+                                          vertical: 14,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            30,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    ElevatedButton.icon(
+                                      onPressed:
+                                          () => registrarUsuario(omitido: true),
+                                      icon: const Icon(Icons.skip_next),
+                                      label: const Text('Omitir'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor:
+                                            AppColors.naranjaIntenso,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 24,
+                                          vertical: 14,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            30,
+                                          ),
+                                          side: const BorderSide(
+                                            color: AppColors.naranjaIntenso,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-
-                            ElevatedButton.icon(
-                              onPressed: () => registrarUsuario(omitido: true),
-                              icon: const Icon(Icons.skip_next),
-                              label: const Text('Omitir'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: AppColors.naranjaIntenso,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 14,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                  side: const BorderSide(
-                                    color: AppColors.naranjaIntenso,
-                                  ),
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                       ),
