@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application_1/pages/utils/app_colors.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -26,9 +27,21 @@ class _AccountPageState extends State<AccountPage> {
   final Map<String, TextEditingController> controllers = {
     'nombres': TextEditingController(), // NUEVO
     'edad': TextEditingController(),
-    'pais': TextEditingController(),
     'telefono': TextEditingController(),
   };
+  final List<String> departamentos = [
+    'Arequipa',
+    'Ayacucho',
+    'Cusco',
+    'Huancayo',
+    'Huaraz',
+    'Lima',
+    'Nazca',
+    'Paracas',
+    'Puno',
+  ];
+  String selectedDepartamento = 'Lima';
+
   String selectedGenero = 'Otro';
 
   @override
@@ -48,7 +61,7 @@ class _AccountPageState extends State<AccountPage> {
         telefono = data['telefono'];
         controllers['nombres']?.text = data['nombres'] ?? ''; //
         controllers['edad']?.text = edad ?? '';
-        controllers['pais']?.text = pais ?? '';
+        selectedDepartamento = pais ?? 'Lima';
         controllers['telefono']?.text = telefono ?? '';
         selectedGenero = genero ?? 'Otro';
       });
@@ -506,11 +519,10 @@ class _AccountPageState extends State<AccountPage> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    TextField(
-                      controller: controllers['pais'],
-                      style: const TextStyle(color: AppColors.pluzAzulOscuro),
+                    DropdownButtonFormField<String>(
+                      value: selectedDepartamento,
                       decoration: InputDecoration(
-                        labelText: 'País',
+                        labelText: 'Ciudad',
                         labelStyle: const TextStyle(
                           color: AppColors.pluzAzulOscuro,
                         ),
@@ -529,13 +541,36 @@ class _AccountPageState extends State<AccountPage> {
                         filled: true,
                         fillColor: Colors.white,
                       ),
-                      onChanged:
-                          (val) => _authService.updateUserField('pais', val),
+                      items:
+                          departamentos
+                              .map(
+                                (d) => DropdownMenuItem(
+                                  value: d,
+                                  child: Text(
+                                    d,
+                                    style: const TextStyle(
+                                      color: AppColors.pluzAzulOscuro,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() => selectedDepartamento = val);
+                          _authService.updateUserField('pais', val);
+                        }
+                      },
                     ),
+
                     const SizedBox(height: 16),
                     TextField(
                       controller: controllers['telefono'],
                       keyboardType: TextInputType.phone,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(9),
+                      ],
                       style: const TextStyle(color: AppColors.pluzAzulOscuro),
                       decoration: InputDecoration(
                         labelText: 'Teléfono',

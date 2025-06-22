@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart'; // <-- Import para InputFormatters
 import 'package:flutter_application_1/pages/utils/app_colors.dart';
 import 'package:flutter_application_1/pages/utils/app_images.dart';
 
@@ -23,10 +24,22 @@ class RegisterStep2Page extends StatefulWidget {
 class _RegisterStep2PageState extends State<RegisterStep2Page> {
   final edadController = TextEditingController();
   final telefonoController = TextEditingController();
-  final paisController = TextEditingController();
+  String departamento = 'Lima';
   String genero = 'Otro';
   bool mostrarFormulario = false;
   bool isLoading = false;
+
+  final List<String> departamentos = [
+    'Arequipa',
+    'Ayacucho',
+    'Cusco',
+    'Huancayo',
+    'Huaraz',
+    'Lima',
+    'Nazca',
+    'Paracas',
+    'Puno',
+  ];
 
   @override
   void initState() {
@@ -50,40 +63,34 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
       final uid = credential.user!.uid;
       final docRef = FirebaseFirestore.instance.collection('usuarios').doc(uid);
 
-      // Preparamos datos
       final data = {
         'nombres': widget.nombre,
         'correo': widget.correo,
         'edad': omitido ? null : edadController.text.trim(),
         'telefono': omitido ? null : telefonoController.text.trim(),
-        'pais': omitido ? null : paisController.text.trim(),
+        'departamento': omitido ? null : departamento,
         'genero': omitido ? null : genero,
         'fotoPerfilBase64': null,
       };
 
-      // Guardamos todo en un solo set
       await docRef.set(data);
 
       if (!mounted) return;
 
-      if (omitido) {
-        // Si omite, mostramos SnackBar y navegamos inmediatamente
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Registro completado. Puedes agregar datos más tarde desde "Cuenta".',
-            ),
-            duration: Duration(seconds: 2),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            omitido
+                ? 'Registro completado. Puedes agregar datos más tarde desde "Cuenta".'
+                : 'Registro completado correctamente.',
           ),
-        );
-        // Navegamos tras breve delay para que se vea el SnackBar
-        Future.delayed(const Duration(milliseconds: 500), () {
-          Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
-        });
-      } else {
-        // Registro completo con datos adicionales
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      Future.delayed(const Duration(milliseconds: 500), () {
         Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
-      }
+      });
     } on FirebaseAuthException catch (e) {
       String mensaje = 'Error: ${e.message}';
       if (e.code == 'email-already-in-use') {
@@ -213,13 +220,15 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
                                       setState(() => genero = val ?? 'Otro'),
                             ),
                             const SizedBox(height: 12),
-                            TextField(
-                              controller: paisController,
-                              style: const TextStyle(color: Colors.white),
+                            DropdownButtonFormField<String>(
+                              value: departamento,
+                              dropdownColor: AppColors.pluzAzulIntenso,
+                              iconEnabledColor: Colors.white,
                               decoration: const InputDecoration(
-                                labelText: 'País',
+                                labelText: 'Ciudad',
+                                labelStyle: TextStyle(color: Colors.white),
                                 prefixIcon: Icon(
-                                  Icons.flag,
+                                  Icons.map,
                                   color: AppColors.naranjaIntenso,
                                 ),
                                 enabledBorder: OutlineInputBorder(
@@ -230,13 +239,30 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
                                     color: AppColors.naranjaIntenso,
                                   ),
                                 ),
-                                labelStyle: TextStyle(color: Colors.white),
                               ),
+                              style: const TextStyle(color: Colors.white),
+                              items:
+                                  departamentos
+                                      .map(
+                                        (d) => DropdownMenuItem(
+                                          value: d,
+                                          child: Text(d),
+                                        ),
+                                      )
+                                      .toList(),
+                              onChanged:
+                                  (val) => setState(
+                                    () => departamento = val ?? departamento,
+                                  ),
                             ),
                             const SizedBox(height: 12),
                             TextField(
                               controller: telefonoController,
                               keyboardType: TextInputType.phone,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(9),
+                              ],
                               style: const TextStyle(color: Colors.white),
                               decoration: const InputDecoration(
                                 labelText: 'Teléfono',
@@ -244,6 +270,7 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
                                   Icons.phone,
                                   color: AppColors.naranjaIntenso,
                                 ),
+                                counterText: '',
                                 enabledBorder: OutlineInputBorder(
                                   borderSide: BorderSide(color: Colors.white),
                                 ),
