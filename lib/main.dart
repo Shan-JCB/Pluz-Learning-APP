@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application_1/pages/landing_page.dart';
+import 'package:flutter_application_1/pages/admin/admin_dashboar_users.dart';
+import 'package:flutter_application_1/pages/admin/admin_dashboard.dart';
+import 'package:flutter_application_1/pages/apartados/sensores_screen.dart';
 import 'package:flutter_application_1/pages/splash_screen.dart';
 import 'firebase_options.dart';
 
@@ -51,8 +53,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.paused) {
-      _handleInactivity(); // Cerrar sesión al ir a segundo plano
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _handleInactivity();
     }
   }
 
@@ -64,7 +67,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void _handleInactivity() async {
     await FirebaseAuth.instance.signOut();
     _navigatorKey.currentState?.pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LandingPage()),
+      MaterialPageRoute(builder: (_) => const SplashScreen()),
       (route) => false,
     );
   }
@@ -81,7 +84,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       behavior: HitTestBehavior.translucent,
       child: MaterialApp(
         navigatorKey: _navigatorKey,
-        title: 'Flutter + Firebase CRUD',
+        title: 'Academias Pluz',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(useMaterial3: true),
         home: const SplashScreen(),
@@ -90,6 +93,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           '/cursos': (_) => const HomeCursoPage(),
           '/add_curso': (_) => const AddCursoPage(),
           '/edit_curso': (_) => const EditCursoPage(),
+          '/sensores': (_) => const SensoresScreen(),
+          '/admin': (_) => const AdminDashboard(),
+          '/usuarios': (context) => const AdminUsuariosPage(),
         },
       ),
     );

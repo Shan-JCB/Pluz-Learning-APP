@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/firebase_service.dart';
+import 'package:flutter_application_1/pages/apartados/detalle_curso_page.dart';
 import 'package:flutter_application_1/pages/utils/app_colors.dart';
 import 'package:flutter_application_1/widgets/curso_card_widget.dart';
 import 'package:flutter_application_1/pages/apartados/carrito_screen.dart';
@@ -175,8 +176,24 @@ class _CursosPageState extends State<CursosPage>
                   ),
                   onPressed: _ordenarPorPrecio,
                 ),
+                const Spacer(),
+                IconButton(
+                  tooltip: 'Refrescar catálogo',
+                  icon: const Icon(
+                    Icons.refresh,
+                    color: AppColors.pluzAzulIntenso,
+                  ),
+                  onPressed: () async {
+                    final nuevosCursos = await getCursosFiltrandoComprados();
+                    setState(() {
+                      _cursosOriginal = Future.value(nuevosCursos);
+                    });
+                    _actualizarLista();
+                  },
+                ),
               ],
             ),
+
             const SizedBox(height: 10),
             Expanded(
               child:
@@ -185,10 +202,28 @@ class _CursosPageState extends State<CursosPage>
                       : ListView.builder(
                         itemCount: _cursosFiltrados.length,
                         itemBuilder: (context, index) {
-                          return CursoCardWidget(
-                            curso: _cursosFiltrados[index],
-                            onAgregar: agregarAlCarrito,
-                            carrito: carrito,
+                          final curso = _cursosFiltrados[index];
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => DetalleCursoPage(
+                                        curso: curso,
+                                        onAgregar:
+                                            agregarAlCarrito, // ✅ FUNCION CORRECTA
+                                        carrito: carrito,
+                                      ),
+                                ),
+                              );
+                            },
+
+                            child: CursoCatalogoCard(
+                              curso: curso,
+                              onAgregar: agregarAlCarrito,
+                              carrito: carrito,
+                            ),
                           );
                         },
                       ),

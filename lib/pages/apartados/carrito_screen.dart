@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application_1/pages/apartados/pago_exitoso_page.dart';
 import 'package:flutter_application_1/pages/utils/app_colors.dart';
 import 'historial_carrito.dart';
 
@@ -32,34 +33,49 @@ class _CarritoScreenState extends State<CarritoScreen> {
 
     final firestore = FirebaseFirestore.instance;
 
-    // Guardar en historial
-    await firestore
-        .collection('usuarios')
-        .doc(user.uid)
-        .collection('historial')
-        .add({
-          'fecha': FieldValue.serverTimestamp(),
-          'productos': widget.carrito,
-          'total': total,
-        });
-
-    // Guardar en compras
-    for (final curso in widget.carrito) {
+    try {
+      // Guardar en historial
       await firestore
           .collection('usuarios')
           .doc(user.uid)
-          .collection('compras')
-          .doc(curso['id'])
-          .set(curso);
+          .collection('historial')
+          .add({
+            'fecha': FieldValue.serverTimestamp(),
+            'productos': widget.carrito,
+            'total': total,
+          });
+
+      // Guardar en compras
+      for (final curso in widget.carrito) {
+        await firestore
+            .collection('usuarios')
+            .doc(user.uid)
+            .collection('compras')
+            .doc(curso['id'])
+            .set(curso);
+      }
+
+      setState(() {
+        widget.carrito.clear();
+      });
+
+      if (context.mounted) {
+        // Redirigir a pantalla de pago exitoso
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const PagoExitosoPage()),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al finalizar la compra: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
-
-    setState(() {
-      widget.carrito.clear();
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Compra finalizada con éxito')),
-    );
   }
 
   String _convertirDrive(String enlace) {

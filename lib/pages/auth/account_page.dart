@@ -450,6 +450,10 @@ class _AccountPageState extends State<AccountPage> {
                     TextField(
                       controller: controllers['edad'],
                       keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(2),
+                      ],
                       style: const TextStyle(color: AppColors.pluzAzulOscuro),
                       decoration: InputDecoration(
                         labelText: 'Edad',

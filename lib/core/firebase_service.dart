@@ -6,53 +6,23 @@ import 'dart:convert';
 
 FirebaseFirestore db = FirebaseFirestore.instance;
 
-// CRUD - Proveedores
-Future<List> getProveedores() async {
-  List data = [];
-  QuerySnapshot snapshot = await db.collection('proveedores').get();
-
-  for (var doc in snapshot.docs) {
-    final d = doc.data() as Map<String, dynamic>;
-    data.add({
-      "uid": doc.id,
-      "razon_social": d["razon_social"],
-      "ruc": d["ruc"],
-      "direccion": d["direccion"],
-      "contacto": d["contacto"],
-      "email": d["email"],
-      "categoria": d["categoria"],
-    });
-  }
-  return data;
-}
-
-Future<void> addProveedor(Map<String, dynamic> datos) async {
-  await db.collection("proveedores").add(datos);
-}
-
-Future<void> updateProveedor(String uid, Map<String, dynamic> datos) async {
-  await db.collection("proveedores").doc(uid).set(datos);
-}
-
-Future<void> deleteProveedor(String uid) async {
-  await db.collection("proveedores").doc(uid).delete();
-}
-
 // CRUD - Cursos
 Future<List> getCursos() async {
   List data = [];
   QuerySnapshot snapshot = await db.collection('cursos').get();
 
   for (var doc in snapshot.docs) {
-    final d = doc.data() as Map<String, dynamic>;
-    data.add({
-      "id": doc.id,
-      "nombre": d["nombre"],
-      "descripcion": d["descripcion"],
-      "precio": d["precio"],
-      "imagen": d["imagen"],
-      "modulos": d["modulos"] ?? [],
-    });
+    final raw = doc.data();
+    if (raw is Map<String, dynamic>) {
+      data.add({
+        "id": doc.id,
+        "nombre": raw["nombre"] ?? '',
+        "descripcion": raw["descripcion"] ?? '',
+        "precio": raw["precio"] ?? 0.0,
+        "imagen": raw["imagen"] ?? '',
+        "modulos": raw["modulos"] ?? [],
+      });
+    }
   }
   return data;
 }

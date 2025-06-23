@@ -19,6 +19,9 @@ class AppImages {
 
   // Rutas a assets locales
   static const String fondo3 = 'assets/images/fondo3.jpg';
+  static const String fondoweb1 = 'assets/images/fondo-web.jpg';
+  static const String fondoweb2 = 'assets/images/fondo-web-2.jpg';
+
   static const String cabecera1 = 'assets/images/cabecera1.jpg';
   static const String logoazul = 'assets/images/logo.png';
   static const String logoblanco = 'assets/images/logowhite.png';

@@ -168,9 +168,12 @@ class _NavbarWidgetState extends State<NavbarWidget> {
             ),
             const Divider(color: Color.fromARGB(179, 203, 203, 203)),
             ListTile(
-              leading: const Icon(Icons.edit, color: AppColors.pluzAzulIntenso),
+              leading: const Icon(
+                Icons.sensor_window,
+                color: AppColors.pluzAzulIntenso,
+              ),
               title: const Text(
-                'CRUD Cursos',
+                'Sensores',
                 style: TextStyle(color: AppColors.pluzAzulOscuro),
               ),
               selected: widget.selectedIndex == 4,

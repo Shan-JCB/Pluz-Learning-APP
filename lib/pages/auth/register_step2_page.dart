@@ -166,6 +166,10 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
                             TextField(
                               controller: edadController,
                               keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(2),
+                              ],
                               style: const TextStyle(color: Colors.white),
                               decoration: const InputDecoration(
                                 labelText: 'Edad',
@@ -265,7 +269,7 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
                               ],
                               style: const TextStyle(color: Colors.white),
                               decoration: const InputDecoration(
-                                labelText: 'Teléfono',
+                                labelText: 'Teléfono +51',
                                 prefixIcon: Icon(
                                   Icons.phone,
                                   color: AppColors.naranjaIntenso,

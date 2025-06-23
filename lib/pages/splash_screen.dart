@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/pages/admin/admin_dashboard.dart';
+import 'package:flutter_application_1/pages/admin/web_login_page.dart';
 import 'package:flutter_application_1/pages/utils/app_colors.dart';
 import 'package:flutter_application_1/pages/utils/app_images.dart';
 import 'package:flutter_application_1/pages/landing_page.dart';
@@ -15,8 +18,8 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
 
   @override
   void initState() {
@@ -25,20 +28,39 @@ class _SplashScreenState extends State<SplashScreen>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
-    );
+    )..forward();
+
     _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
 
-    _controller.forward();
+    Timer(const Duration(seconds: 3), _navegarSegunPlataforma);
+  }
 
-    Timer(const Duration(seconds: 3), () {
+  void _navegarSegunPlataforma() {
+    // Si estamos en Web, abrimos siempre el dashboard de admin
+    if (kIsWeb) {
       final user = FirebaseAuth.instance.currentUser;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => user != null ? const HomePage() : const LandingPage(),
+          builder:
+              (_) =>
+                  user != null
+                      ? const AdminDashboard()
+                      : const WebLoginPage(), // Nueva pantalla login web
         ),
       );
-    });
+
+      return;
+    }
+
+    // En móvil, si hay sesión vamos a Home, si no a Landing
+    final user = FirebaseAuth.instance.currentUser;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => user != null ? const HomePage() : const LandingPage(),
+      ),
+    );
   }
 
   @override
