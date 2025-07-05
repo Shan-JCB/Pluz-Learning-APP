@@ -263,7 +263,78 @@ class _CarritoScreenState extends State<CarritoScreen> {
     final firestore = FirebaseFirestore.instance;
 
     try {
-      // Guardar en historial
+      // 🔎 Obtener datos del usuario
+      final docUser =
+          await firestore.collection('usuarios').doc(user.uid).get();
+      final data = docUser.data() ?? {};
+
+      final edadTexto = (data['edad'] ?? '').toString().trim();
+      final telefonoTexto = (data['telefono'] ?? '').toString().trim();
+      final edad = int.tryParse(edadTexto);
+
+      // ❌ Validar campos vacíos
+      if (edadTexto.isEmpty || telefonoTexto.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Completa los campos de edad y teléfono en tu perfil antes de realizar una compra.',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // ❌ Validar si la edad está fuera del rango permitido
+      if (edad == null || edad < 10 || edad > 24) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'La edad debe estar entre 10 y 24 años para realizar una compra.',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // ❌ Validar si es menor de edad sin número de tutor
+      if (edad < 18 && telefonoTexto.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Si eres menor de edad, debes registrar el número de tu tutor o apoderado.',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // 🔎 Validar cantidad total de cursos comprados
+      final comprasSnapshot =
+          await firestore
+              .collection('usuarios')
+              .doc(user.uid)
+              .collection('compras')
+              .get();
+
+      final totalActual = comprasSnapshot.docs.length;
+      final totalNuevo = totalActual + widget.carrito.length;
+
+      if (totalNuevo > 7) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Ya tienes cursos en suscripción. Completa primero antes de adquirir más.',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // ✅ Guardar en historial
       await firestore
           .collection('usuarios')
           .doc(user.uid)
@@ -274,7 +345,7 @@ class _CarritoScreenState extends State<CarritoScreen> {
             'total': total,
           });
 
-      // Guardar en compras
+      // ✅ Guardar en compras
       for (final curso in widget.carrito) {
         await firestore
             .collection('usuarios')
@@ -289,7 +360,6 @@ class _CarritoScreenState extends State<CarritoScreen> {
       });
 
       if (context.mounted) {
-        // Redirigir a pantalla de pago exitoso
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const PagoExitosoPage()),

@@ -32,39 +32,84 @@ class _EditCursoPageState extends State<EditCursoPage> {
   ];
 
   Future<void> actualizarCurso(String id) async {
-    // Validaciones básicas
-    if (nombreController.text.trim().isEmpty) {
+    final nombre = nombreController.text.trim();
+    final descripcion = descripcionController.text.trim();
+    final precioTexto = precioController.text.trim();
+    final imagen = imagenController.text.trim();
+
+    // ✅ Validación: campos obligatorios
+    if (nombre.isEmpty ||
+        descripcion.isEmpty ||
+        precioTexto.isEmpty ||
+        imagen.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El nombre no puede estar vacío')),
+        const SnackBar(
+          content: Text('Por favor, completa todos los campos obligatorios.'),
+        ),
       );
       return;
     }
-    final precio = double.tryParse(precioController.text);
-    if (precio == null || precio < 0) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Ingresa un precio válido')));
+
+    // ✅ Validación: precio válido y numérico
+    final precio = double.tryParse(precioTexto);
+    if (precio == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Precio inválido. Solo se permiten números.'),
+        ),
+      );
       return;
     }
 
+    // ✅ Validación: precio entre S/ 10.00 y S/ 1000.00
+    if (precio < 10.0 || precio > 200.0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('El precio debe estar entre S/ 10.00 y S/ 200.00.'),
+        ),
+      );
+      return;
+    }
+
+    // ✅ Validación: módulos deben tener contenido
+    for (int i = 0; i < modulosControllers.length; i++) {
+      final contenido = modulosControllers[i].text.trim();
+      if (contenido.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Completa el contenido de "${nombresModulos[i]}".'),
+          ),
+        );
+        return;
+      }
+    }
+
+    // ✅ Construcción del objeto modulos
     final modulos = List.generate(
       6,
       (i) => {
         "titulo": nombresModulos[i],
-        "contenido": modulosControllers[i].text,
+        "contenido": modulosControllers[i].text.trim(),
       },
     );
 
     final data = {
-      'nombre': nombreController.text.trim(),
-      'descripcion': descripcionController.text.trim(),
+      'nombre': nombre,
+      'descripcion': descripcion,
       'precio': precio,
-      'imagen': imagenController.text.trim(),
+      'imagen': imagen,
       'modulos': modulos,
     };
 
+    // 🔄 Actualizar curso
     await updateCurso(id, data);
-    if (context.mounted) Navigator.pop(context, 'actualizado');
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Curso actualizado correctamente')),
+      );
+      Navigator.pop(context, 'actualizado');
+    }
   }
 
   @override

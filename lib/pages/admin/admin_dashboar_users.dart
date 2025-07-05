@@ -132,22 +132,73 @@ class _AdminUsuariosPageState extends State<AdminUsuariosPage> {
               ),
               TextButton(
                 onPressed: () async {
+                  final nombre = nombreCtrl.text.trim();
+                  final edadTexto = edadCtrl.text.trim();
+                  final telefono = telCtrl.text.trim();
+
+                  final edad = int.tryParse(edadTexto);
+
+                  if (nombre.isEmpty || edadTexto.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('El nombre y la edad son obligatorios.'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (edad == null || edad < 10 || edad > 24) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('La edad debe estar entre 10 y 24 años.'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (edad < 18 && telefono.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Si el usuario es menor de edad, debe registrar el número del tutor o apoderado.',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (telefono.isNotEmpty && telefono.length != 9) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'El número de teléfono debe tener exactamente 9 dígitos.',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
                   await FirebaseFirestore.instance
                       .collection('usuarios')
                       .doc(usuario['id'])
                       .update({
-                        'nombres': nombreCtrl.text.trim(),
-                        'edad': edadCtrl.text.trim(),
-                        'telefono': telCtrl.text.trim(),
+                        'nombres': nombre,
+                        'edad': edadTexto,
+                        'telefono': telefono,
                         'genero': genero,
                         'pais': pais,
                       });
+
                   Navigator.pop(context);
                   cargarUsuarios();
+
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Usuario actualizado')),
+                    const SnackBar(
+                      content: Text('Usuario actualizado correctamente.'),
+                    ),
                   );
                 },
+
                 child: const Text('Guardar'),
               ),
             ],

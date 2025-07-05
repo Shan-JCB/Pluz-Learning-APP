@@ -47,11 +47,52 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
     Future.delayed(const Duration(milliseconds: 300), () {
       setState(() => mostrarFormulario = true);
     });
+
+    edadController.addListener(() {
+      setState(() {}); // Para que el mensaje se actualice dinámicamente
+    });
   }
 
   Future<void> registrarUsuario({bool omitido = false}) async {
     if (isLoading) return;
     setState(() => isLoading = true);
+
+    final edadTexto = edadController.text.trim();
+    final edad = int.tryParse(edadTexto);
+
+    if (!omitido) {
+      if (edad == null || edad < 10 || edad > 24) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('La edad debe estar entre 10 y 24 años.'),
+          ),
+        );
+        setState(() => isLoading = false);
+        return;
+      }
+
+      if (!omitido && telefonoController.text.trim().length != 9) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('El teléfono debe tener exactamente 9 dígitos'),
+          ),
+        );
+        setState(() => isLoading = false);
+        return;
+      }
+
+      if (edad < 18 && telefonoController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Si eres menor de edad, por favor ingresa el número de tu tutor o apoderado.',
+            ),
+          ),
+        );
+        setState(() => isLoading = false);
+        return;
+      }
+    }
 
     try {
       final credential = await FirebaseAuth.instance
@@ -81,10 +122,10 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
         SnackBar(
           content: Text(
             omitido
-                ? 'Registro completado. Puedes agregar datos más tarde desde "Cuenta".'
+                ? 'Registro completado. Puedes agregar datos más tarde desde "Cuenta". ⚠ Si eres menor de edad, recuerda ingresar el número de tu tutor o apoderado.'
                 : 'Registro completado correctamente.',
           ),
-          duration: const Duration(seconds: 2),
+          duration: const Duration(seconds: 6),
         ),
       );
 
@@ -188,6 +229,21 @@ class _RegisterStep2PageState extends State<RegisterStep2Page> {
                                 labelStyle: TextStyle(color: Colors.white),
                               ),
                             ),
+
+                            if (int.tryParse(edadController.text) != null &&
+                                int.parse(edadController.text) < 18)
+                              const Padding(
+                                padding: EdgeInsets.only(top: 8),
+                                child: Text(
+                                  '⚠ Si eres menor de edad, por favor ingresa el número de tu tutor o apoderado.',
+                                  style: TextStyle(
+                                    color: Colors.amberAccent,
+                                    fontSize: 13,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+
                             const SizedBox(height: 12),
                             DropdownButtonFormField<String>(
                               value: genero,

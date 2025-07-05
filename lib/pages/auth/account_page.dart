@@ -158,6 +158,7 @@ class _AccountPageState extends State<AccountPage> {
 
   Future<void> cambiarContrasena() async {
     final controller = TextEditingController();
+
     final newPassword = await showDialog<String>(
       context: context,
       builder:
@@ -182,10 +183,87 @@ class _AccountPageState extends State<AccountPage> {
     );
 
     if (newPassword != null && newPassword.length >= 6) {
-      await _authService.updatePassword(newPassword);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Contraseña actualizada')));
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      // ✅ Intentamos obtener las credenciales actuales del usuario
+      final email = user.email;
+
+      if (email == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo obtener el correo del usuario'),
+          ),
+        );
+        return;
+      }
+
+      // Solicitar contraseña actual para reautenticación
+      final actualController = TextEditingController();
+      final actualPassword = await showDialog<String>(
+        context: context,
+        builder:
+            (_) => AlertDialog(
+              title: const Text('Confirmar identidad'),
+              content: TextField(
+                controller: actualController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  hintText: 'Contraseña actual',
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+                TextButton(
+                  onPressed:
+                      () => Navigator.pop(context, actualController.text),
+                  child: const Text('Confirmar'),
+                ),
+              ],
+            ),
+      );
+
+      if (actualPassword == null || actualPassword.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Autenticación cancelada')),
+        );
+        return;
+      }
+
+      try {
+        // ✅ Reautenticación
+        final cred = EmailAuthProvider.credential(
+          email: email,
+          password: actualPassword,
+        );
+        await user.reauthenticateWithCredential(cred);
+
+        // ✅ Cambiar contraseña
+        await user.updatePassword(newPassword);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Contraseña actualizada. Inicia sesión nuevamente.'),
+          ),
+        );
+
+        await FirebaseAuth.instance.signOut();
+
+        if (context.mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const LandingPage()),
+            (route) => false,
+          );
+        }
+      } on FirebaseAuthException catch (e) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.message}')));
+      }
     } else if (newPassword != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -193,6 +271,52 @@ class _AccountPageState extends State<AccountPage> {
         ),
       );
     }
+  }
+
+  void guardarCambios() async {
+    final edadTexto = controllers['edad']!.text.trim();
+    final telefonoTexto = controllers['telefono']!.text.trim();
+    final edadInt = int.tryParse(edadTexto);
+
+    if (edadInt == null || edadInt < 10 || edadInt > 24) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('La edad debe estar entre 10 y 24 años.')),
+      );
+      return;
+    }
+
+    if (edadInt < 18 && telefonoTexto.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Si eres menor de edad, por favor ingresa el número de tu tutor o apoderado.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (telefonoTexto.isNotEmpty && telefonoTexto.length != 9) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('El teléfono debe tener exactamente 9 dígitos.'),
+        ),
+      );
+      return;
+    }
+
+    // ✅ Si pasa la validación, actualiza los datos
+    await _authService.updateUserData({
+      'edad': edadTexto,
+      'telefono': telefonoTexto,
+      'genero': selectedGenero,
+      'departamento': selectedDepartamento,
+      // Otros campos si deseas...
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Datos actualizados correctamente.')),
+    );
   }
 
   @override
@@ -475,8 +599,6 @@ class _AccountPageState extends State<AccountPage> {
                         filled: true,
                         fillColor: Colors.white,
                       ),
-                      onChanged:
-                          (val) => _authService.updateUserField('edad', val),
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
@@ -600,91 +722,112 @@ class _AccountPageState extends State<AccountPage> {
                           (val) =>
                               _authService.updateUserField('telefono', val),
                     ),
+
                     const SizedBox(height: 16),
-                    ListTile(
-                      leading: const Icon(Icons.delete, color: Colors.red),
-                      title: const Text(
-                        'Eliminar cuenta',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                      onTap: () async {
-                        // 1) Confirmación inicial
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder:
-                              (context) => AlertDialog(
-                                title: const Text('Eliminar cuenta'),
-                                content: const Text(
-                                  '¿Estás seguro de que deseas eliminar tu cuenta?',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed:
-                                        () => Navigator.pop(context, false),
-                                    child: const Text('Cancelar'),
-                                  ),
-                                  TextButton(
-                                    onPressed:
-                                        () => Navigator.pop(context, true),
-                                    child: const Text(
-                                      'Eliminar',
-                                      style: TextStyle(color: Colors.red),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Botón Eliminar a la izquierda
+                        TextButton.icon(
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder:
+                                  (context) => AlertDialog(
+                                    title: const Text('Eliminar cuenta'),
+                                    content: const Text(
+                                      '¿Estás seguro de que deseas eliminar tu cuenta?',
                                     ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed:
+                                            () => Navigator.pop(context, false),
+                                        child: const Text('Cancelar'),
+                                      ),
+                                      TextButton(
+                                        onPressed:
+                                            () => Navigator.pop(context, true),
+                                        child: const Text(
+                                          'Eliminar',
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                        );
+                            );
 
-                        if (confirm != true) return;
+                            if (confirm != true) return;
 
-                        try {
-                          // 2) Intentar eliminar directamente
-                          await _authService.deleteAccount();
-                          await FirebaseAuth.instance.signOut();
-
-                          // 3) Navegar a LandingPage
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const LandingPage(),
-                            ),
-                            (route) => false,
-                          );
-                        } on FirebaseAuthException catch (e) {
-                          if (e.code == 'requires-recent-login') {
-                            // 4) Si requiere reautenticación, la pedimos:
-                            final reautenticado =
-                                await _reauthenticateUsuario();
-                            if (reautenticado) {
-                              // 5) Reintentar eliminar cuenta
-                              try {
-                                await _authService.deleteAccount();
-                                await FirebaseAuth.instance.signOut();
-                                Navigator.pushAndRemoveUntil(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const LandingPage(),
-                                  ),
-                                  (route) => false,
-                                );
-                              } on FirebaseAuthException catch (e2) {
+                            try {
+                              await _authService.deleteAccount();
+                              await FirebaseAuth.instance.signOut();
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const LandingPage(),
+                                ),
+                                (route) => false,
+                              );
+                            } on FirebaseAuthException catch (e) {
+                              if (e.code == 'requires-recent-login') {
+                                final reautenticado =
+                                    await _reauthenticateUsuario();
+                                if (reautenticado) {
+                                  try {
+                                    await _authService.deleteAccount();
+                                    await FirebaseAuth.instance.signOut();
+                                    Navigator.pushAndRemoveUntil(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const LandingPage(),
+                                      ),
+                                      (route) => false,
+                                    );
+                                  } on FirebaseAuthException catch (e2) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Error al eliminar: ${e2.message}',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+                              } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(
-                                      'Error al eliminar: ${e2.message}',
-                                    ),
+                                    content: Text('Error: ${e.message}'),
                                   ),
                                 );
                               }
                             }
-                          } else {
-                            // Otro error de FirebaseAuth
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error: ${e.message}')),
-                            );
-                          }
-                        }
-                      },
+                          },
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          label: const Text(
+                            'Eliminar cuenta',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+
+                        // Botón Guardar a la derecha
+                        ElevatedButton.icon(
+                          onPressed: guardarCambios,
+                          icon: const Icon(Icons.save),
+                          label: const Text('Guardar'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.naranjaIntenso,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

@@ -31,24 +31,98 @@ class _AddCursoPageState extends State<AddCursoPage> {
   ];
 
   Future<void> guardarCurso() async {
+    final nombre = nombreController.text.trim();
+    final descripcion = descripcionController.text.trim();
+    final precioTexto = precioController.text.trim();
+    final imagen = imagenController.text.trim();
+
+    // ✅ Validación: campos obligatorios
+    if (nombre.isEmpty ||
+        descripcion.isEmpty ||
+        precioTexto.isEmpty ||
+        imagen.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, completa todos los campos obligatorios.'),
+        ),
+      );
+      return;
+    }
+
+    // ✅ Validación: formato correcto del precio
+    final precio = double.tryParse(precioTexto);
+    if (precio == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Precio inválido. Solo se permiten números.'),
+        ),
+      );
+      return;
+    }
+
+    // ✅ Validación: rango de precio (S/ 10.00 a S/ 1000.00)
+    if (precio < 10.0 || precio > 200.0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('El precio debe estar entre S/ 10.00 y S/ 200.00.'),
+        ),
+      );
+      return;
+    }
+
+    // ✅ Validación: todos los módulos deben tener contenido
+    for (int i = 0; i < modulosControllers.length; i++) {
+      final contenido = modulosControllers[i].text.trim();
+      if (contenido.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Completa el contenido de "${nombresModulos[i]}".'),
+          ),
+        );
+        return;
+      }
+    }
+
+    // ✅ Validación: evitar cursos duplicados por nombre
+    final cursosExistentes = await getCursos();
+    final nombreYaExiste = cursosExistentes.any(
+      (curso) =>
+          curso['nombre'].toString().toLowerCase() == nombre.toLowerCase(),
+    );
+
+    if (nombreYaExiste) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ya existe un curso con ese nombre.')),
+      );
+      return;
+    }
+
+    // 🔄 Armado del curso
     final modulos = List.generate(
       6,
       (i) => {
         "titulo": nombresModulos[i],
-        "contenido": modulosControllers[i].text,
+        "contenido": modulosControllers[i].text.trim(),
       },
     );
 
     final data = {
-      'nombre': nombreController.text,
-      'descripcion': descripcionController.text,
-      'precio': double.tryParse(precioController.text) ?? 0.0,
-      'imagen': imagenController.text,
+      'nombre': nombre,
+      'descripcion': descripcion,
+      'precio': precio,
+      'imagen': imagen,
       'modulos': modulos,
     };
 
+    // ✅ Guardado final
     await addCurso(data);
-    if (context.mounted) Navigator.pop(context, 'guardado');
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Curso guardado exitosamente')),
+      );
+      Navigator.pop(context, 'guardado');
+    }
   }
 
   @override
