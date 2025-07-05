@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application_1/pages/apartados/detalle_curso_page.dart';
 import 'package:flutter_application_1/pages/apartados/pago_exitoso_page.dart';
 import 'package:flutter_application_1/pages/utils/app_colors.dart';
 import 'historial_carrito.dart';
@@ -24,6 +25,234 @@ class _CarritoScreenState extends State<CarritoScreen> {
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Producto eliminado del carrito')),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _buscarCursosSimilares() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return [];
+
+    final firestore = FirebaseFirestore.instance;
+
+    // 1. Obtener IDs de cursos comprados
+    final comprasSnap =
+        await firestore
+            .collection('usuarios')
+            .doc(user.uid)
+            .collection('compras')
+            .get();
+
+    final idsComprados = comprasSnap.docs.map((e) => e.id).toSet();
+
+    // 2. Obtener todos los cursos del catálogo
+    final cursosSnap = await firestore.collection('cursos').get();
+
+    final cursosCatalogo =
+        cursosSnap.docs.map((doc) {
+          final data = doc.data();
+          return {
+            'id': doc.id,
+            'nombre': data['nombre'],
+            'descripcion': data['descripcion'],
+            'precio': data['precio'],
+            'imagen': data['imagen'],
+            'modulos': data['modulos'],
+          };
+        }).toList();
+
+    // 3. Categorías en el carrito
+    final categoriasCarrito =
+        widget.carrito
+            .map(
+              (e) =>
+                  (e['descripcion'] ?? '')
+                      .toString()
+                      .split('-')
+                      .first
+                      .trim()
+                      .toLowerCase(),
+            )
+            .toSet();
+
+    final idsCarrito = widget.carrito.map((e) => e['id']).toSet();
+
+    // 4. Filtrar recomendados por categoría
+    final recomendados =
+        cursosCatalogo.where((curso) {
+          final categoria =
+              (curso['descripcion'] ?? '')
+                  .toString()
+                  .split('-')
+                  .first
+                  .trim()
+                  .toLowerCase();
+
+          return categoriasCarrito.contains(categoria) &&
+              !idsCarrito.contains(curso['id']) &&
+              !idsComprados.contains(curso['id']);
+        }).toList();
+
+    // 5. Si no hay recomendados, devolver 5 cursos aleatorios
+    if (recomendados.isEmpty) {
+      final cursosDisponibles =
+          cursosCatalogo
+              .where(
+                (curso) =>
+                    !idsCarrito.contains(curso['id']) &&
+                    !idsComprados.contains(curso['id']),
+              )
+              .toList();
+
+      cursosDisponibles.shuffle();
+      return cursosDisponibles.take(5).toList();
+    }
+
+    return recomendados;
+  }
+
+  Widget _recomendacionesVisuales(List<Map<String, dynamic>> cursos) {
+    if (cursos.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Text(
+            'Cursos recomendados basados en tu carrito:',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: AppColors.pluzAzulIntenso,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 250,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: cursos.length,
+            itemBuilder: (context, index) {
+              final curso = cursos[index];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) => DetalleCursoPage(
+                            curso: curso,
+                            esComprado: false,
+                            carrito: widget.carrito,
+                            onAgregar: (nuevoCurso) {
+                              setState(() {
+                                widget.carrito.add(nuevoCurso);
+                              });
+                            },
+                          ),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: 200,
+                  margin: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(12),
+                        ),
+                        child: Image.network(
+                          _convertirDrive(curso['imagen'] ?? ''),
+                          height: 110,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder:
+                              (_, __, ___) => Container(
+                                height: 110,
+                                color: Colors.grey[200],
+                                child: const Icon(Icons.broken_image, size: 40),
+                              ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              curso['nombre'] ?? '',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'S/ ${curso['precio'].toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                color: AppColors.naranjaIntenso,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                icon: const Icon(Icons.add_shopping_cart),
+                                label: const Text('Agregar'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.naranjaIntenso,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                  ),
+                                  textStyle: const TextStyle(fontSize: 12),
+                                ),
+                                onPressed: () {
+                                  if (widget.carrito.length >= 5) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'No puedes agregar más de 5 cursos al carrito',
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  setState(() {
+                                    widget.carrito.add(curso);
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -167,50 +396,85 @@ class _CarritoScreenState extends State<CarritoScreen> {
                               ),
                             ],
                           ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(12),
-                            leading: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                _convertirDrive(producto['imagen'] ?? ''),
-                                width: 60,
-                                height: 60,
-                                fit: BoxFit.cover,
-                                errorBuilder:
-                                    (_, __, ___) => Container(
-                                      width: 60,
-                                      height: 60,
-                                      color: Colors.grey[200],
-                                      child: const Icon(
-                                        Icons.broken_image,
-                                        color: Colors.grey,
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => DetalleCursoPage(
+                                        curso: producto,
+                                        esComprado: false,
+                                        carrito: widget.carrito,
+                                        onAgregar: null, // ya está en carrito
                                       ),
-                                    ),
+                                ),
+                              );
+                            },
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.all(12),
+                              leading: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  _convertirDrive(producto['imagen'] ?? ''),
+                                  width: 60,
+                                  height: 60,
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (_, __, ___) => Container(
+                                        width: 60,
+                                        height: 60,
+                                        color: Colors.grey[200],
+                                        child: const Icon(
+                                          Icons.broken_image,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                ),
                               ),
-                            ),
-                            title: Text(
-                              producto['nombre'],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.pluzAzulOscuro,
+                              title: Text(
+                                producto['nombre'],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.pluzAzulOscuro,
+                                ),
                               ),
-                            ),
-                            subtitle: Text(
-                              'S/ ${producto['precio'].toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.black87,
+                              subtitle: Text(
+                                'S/ ${producto['precio'].toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black87,
+                                ),
                               ),
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => eliminarDelCarrito(index),
+                              trailing: IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () => eliminarDelCarrito(index),
+                              ),
                             ),
                           ),
                         );
                       },
                     ),
                   ),
+                  FutureBuilder<List<Map<String, dynamic>>>(
+                    future: _buscarCursosSimilares(),
+                    builder: (context, snapshot) {
+                      // Si ya hay 5 cursos en el carrito, no mostrar recomendaciones
+                      if (widget.carrito.length >= 5) {
+                        return const SizedBox.shrink();
+                      }
+
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+
+                      return _recomendacionesVisuales(snapshot.data!);
+                    },
+                  ),
+
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,

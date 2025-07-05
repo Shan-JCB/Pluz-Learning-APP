@@ -20,12 +20,24 @@ class _WebLoginPageState extends State<WebLoginPage> {
     setState(() => isLoading = true);
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final cred = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/admin');
+
+      final email = cred.user?.email;
+      if (email == 'admin@gmail.com') {
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/admin');
+        }
+      } else {
+        await FirebaseAuth.instance.signOut(); // cerrar sesión si no es admin
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Acceso restringido solo para administrador'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(

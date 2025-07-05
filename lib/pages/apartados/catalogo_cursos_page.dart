@@ -72,6 +72,16 @@ class _CursosPageState extends State<CursosPage>
   }
 
   void agregarAlCarrito(Map<String, dynamic> producto) {
+    if (carrito.length >= 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Solo puedes tener hasta 5 cursos en el carrito'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       carrito.add(producto);
     });
@@ -211,8 +221,7 @@ class _CursosPageState extends State<CursosPage>
                                   builder:
                                       (_) => DetalleCursoPage(
                                         curso: curso,
-                                        onAgregar:
-                                            agregarAlCarrito, // ✅ FUNCION CORRECTA
+                                        onAgregar: agregarAlCarrito,
                                         carrito: carrito,
                                       ),
                                 ),
